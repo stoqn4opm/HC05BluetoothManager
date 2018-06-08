@@ -15,47 +15,45 @@ BaseCommunicationManager* BaseCommunicationManager::instance = 0;
 #pragma mark - Common Update Loop
 
 void BaseCommunicationManager::update() {
-  if (btSerial()->available()) {
-    Serial.write(btSerial()->read());
-  }
-  if (Serial.available()) {
-    btSerial()->write(Serial.read());
-  }
+    
 }
 
+bool BaseCommunicationManager::sendCommand(String command) {
+    Serial.println(command);
+    delay(100); // > 1000 from datasheet for HC-06 !!!!!!!!!!
+    
+    bool responseReceived = false;
+    while (!responseReceived) {
+        while (Serial.available() > 0) {
+            responseReceived = true;
+            break;
+        }
+    }
+}
 
 void BaseCommunicationManager::enterMode(int8_t mode) {
-  digitalWrite(POWER_CONTROL_PIN, HIGH); // for P Channel mosfet base control
+  digitalWrite(POWER_CONTROL_PIN, LOW); // for N Channel mosfet base control
   digitalWrite(MODE_CONTROL_KEY_PIN, mode == MODE_NORMAL ? LOW : HIGH);
-  delay(100);
-  digitalWrite(POWER_CONTROL_PIN, LOW); // for P Channel mosfet base control
-  delay(1000);
+  delay(10);
+  digitalWrite(POWER_CONTROL_PIN, HIGH); // for N Channel mosfet base control
 }
 
 #pragma mark - Common Send/Receive Data
 
 int8_t BaseCommunicationManager::countOfBytesAvailable() {
-  return btSerial()->available();
+  return Serial.available();
 }
 
 void BaseCommunicationManager::send(int16_t data) {
 
-  //    btSerial.write(&data, sizeof(data));
+  //    Serial.write(&data, sizeof(data));
 }
 
 int16_t BaseCommunicationManager::getData() {
-  btSerial()->read();
+  Serial.read();
 }
 
 #pragma mark - Computed Variables
-
-SoftwareSerial * BaseCommunicationManager::btSerial() {
-  if (helper) {
-    return helper;
-  }
-  helper = new SoftwareSerial(BLUETOOTH_RX_PIN, BLUETOOTH_TX_PIN);
-  return helper;
-}
 
 bool BaseCommunicationManager::isConnected() {
   return digitalRead(CONNECTION_CHECK_PIN) == HIGH;

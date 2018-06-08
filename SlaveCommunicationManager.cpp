@@ -20,7 +20,7 @@ SlaveCommunicationManager::SlaveCommunicationManager() {
         performModuleInit();
     }
     enterMode(MODE_NORMAL);
-    btSerial()->begin(BAUD_RATE_NORMAL);
+    Serial.begin(BAUD_RATE_NORMAL);
 }
 
 BaseCommunicationManager* SlaveCommunicationManager::shared() {
@@ -33,23 +33,18 @@ BaseCommunicationManager* SlaveCommunicationManager::shared() {
 #pragma mark - Module Specific Init
 
 void SlaveCommunicationManager::performModuleInit() {
-    btSerial()->begin(BAUD_RATE_ATMODE);
+    Serial.begin(BAUD_RATE_ATMODE);
     enterMode(MODE_ATCOMMAND);
-    btSerial()->println("AT+ORGL");
-    delay(1000);
-    Serial.println("AT+RMAAD");
-    delay(1000);
-    Serial.println("AT+NAME=NES Controller");
-    delay(1000);
-    Serial.println("AT+PSWD=0000");
-    delay(1000);
-    Serial.println("AT+ROLE=0");
-    delay(1000);
-    Serial.println("AT+CLASS=002508");
-    delay(1000);
-    Serial.println("AT+IAC=9E8B32");
-    delay(1000);
-        
+    delay(700);
+    sendCommand("AT+ORGL");
+    sendCommand("AT+RMAAD");
+    sendCommand("AT+UART=9600,0,0");
+    sendCommand("AT+NAME=NES Controller");
+    sendCommand("AT+PSWD=0000");
+    sendCommand("AT+ROLE=0");
+    sendCommand("AT+CLASS=73F4"); // custom so that its harder to be discovered
+    sendCommand("AT+IAC=9E8B3F"); // not relevant but just in case, for hiding
+    
 //    AVRUserDefaults::setIsBluetoothAlreadyConfigured(true);
-    btSerial()->end();
+    Serial.end();
 }
