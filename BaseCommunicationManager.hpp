@@ -20,6 +20,7 @@
 
 #define MODE_NORMAL    0x00
 #define MODE_ATCOMMAND 0xFF
+#define MODE_SLEEP     0xAA
 
 #include "Arduino.h"
 #include <AVRUserDefaults.h>

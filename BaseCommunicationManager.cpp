@@ -41,6 +41,12 @@ bool BaseCommunicationManager::sendCommand(String command) {
 }
 
 void BaseCommunicationManager::enterMode(int8_t mode) {
+
+  if (mode == MODE_SLEEP) {
+    digitalWrite(POWER_CONTROL_PIN, LOW);
+    return;
+  }
+
   digitalWrite(POWER_CONTROL_PIN, LOW); // for N Channel mosfet base control
   digitalWrite(MODE_CONTROL_KEY_PIN, mode == MODE_NORMAL ? LOW : HIGH);
   delay(10);
