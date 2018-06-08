@@ -28,12 +28,12 @@
 
 class BaseCommunicationManager {
 
-protected:
+  protected:
     static BaseCommunicationManager *instance;
     virtual void performModuleInit() = 0;
     void enterMode(int8_t mode); // use MODE_NORMAL and MODE_ATCOMMAND
-                                                                                                                                                          ;
-public:
+    bool sendCommand(String command);                                                                                                                                                   ;
+  public:
     bool isConnected();
     void update();
     void send(int16_t data);

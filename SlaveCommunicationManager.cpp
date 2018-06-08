@@ -42,8 +42,9 @@ void SlaveCommunicationManager::performModuleInit() {
     sendCommand("AT+NAME=NES Controller");
     sendCommand("AT+PSWD=0000");
     sendCommand("AT+ROLE=0");
+    sendCommand("AT+CMODE=1");
     sendCommand("AT+CLASS=73F4"); // custom so that its harder to be discovered
-    sendCommand("AT+IAC=9E8B3F"); // not relevant but just in case, for hiding
+    sendCommand("AT+IAC=9E8B33"); // liac
     
 //    AVRUserDefaults::setIsBluetoothAlreadyConfigured(true);
     Serial.end();
