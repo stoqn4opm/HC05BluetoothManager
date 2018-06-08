@@ -44,6 +44,7 @@ void BaseCommunicationManager::enterMode(int8_t mode) {
 
   if (mode == MODE_SLEEP) {
     digitalWrite(POWER_CONTROL_PIN, LOW);
+    digitalWrite(MODE_CONTROL_KEY_PIN, LOW);
     return;
   }
 

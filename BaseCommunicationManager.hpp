@@ -19,8 +19,8 @@
 #define POWER_CONTROL_PIN    9
 
 #define MODE_NORMAL    0x00
-#define MODE_ATCOMMAND 0xFF
-#define MODE_SLEEP     0xAA
+#define MODE_ATCOMMAND 0x02
+#define MODE_SLEEP     0x01
 
 #include "Arduino.h"
 #include <AVRUserDefaults.h>
