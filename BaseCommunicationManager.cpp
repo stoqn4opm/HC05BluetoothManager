@@ -15,20 +15,29 @@ BaseCommunicationManager* BaseCommunicationManager::instance = 0;
 #pragma mark - Common Update Loop
 
 void BaseCommunicationManager::update() {
-    
+
 }
 
 bool BaseCommunicationManager::sendCommand(String command) {
-    Serial.println(command);
-    delay(100); // > 1000 from datasheet for HC-06 !!!!!!!!!!
-    
-    bool responseReceived = false;
-    while (!responseReceived) {
-        while (Serial.available() > 0) {
-            responseReceived = true;
-            break;
-        }
+  Serial.println(command);
+  delay(100); // > 1000 from datasheet for HC-06 !!!!!!!!!!
+
+  bool oLetterReceived = false;
+  bool kLetterReceived = false;
+
+  while (oLetterReceived == false && kLetterReceived == false) {
+
+    while (Serial.available() > 0) {
+      char readedChar = Serial.read();
+
+      if (readedChar == 'O') {
+        oLetterReceived = true;
+      }
+      else if (readedChar == 'K' && oLetterReceived) {
+        kLetterReceived = true;
+      }
     }
+  }
 }
 
 void BaseCommunicationManager::enterMode(int8_t mode) {
