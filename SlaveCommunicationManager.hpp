@@ -15,7 +15,7 @@ class SlaveCommunicationManager: BaseCommunicationManager {
 private:
     SlaveCommunicationManager();
 protected:
-    virtual void performModuleInit();
+    virtual bool performModuleInit();
 public:
     static BaseCommunicationManager *shared();
 };

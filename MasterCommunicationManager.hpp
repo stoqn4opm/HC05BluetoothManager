@@ -15,7 +15,7 @@ class MasterCommunicationManager: BaseCommunicationManager {
 private:
     MasterCommunicationManager();
 protected:
-    virtual void performModuleInit();
+    virtual bool performModuleInit();
 public:
     static BaseCommunicationManager *shared();
 };

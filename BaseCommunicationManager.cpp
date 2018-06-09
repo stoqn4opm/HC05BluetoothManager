@@ -20,24 +20,16 @@ void BaseCommunicationManager::update() {
 
 bool BaseCommunicationManager::sendCommand(String command) {
   Serial.println(command);
-  delay(100); // > 1000 from datasheet for HC-06 !!!!!!!!!!
+  Serial.flush(); // Waits for the transmission of outgoing serial data to complete.
+  delay(250); // > 1000 from datasheet for HC-06, tested and 107 fails, 114 passes
 
-  bool oLetterReceived = false;
-  bool kLetterReceived = false;
-
-  while (oLetterReceived == false && kLetterReceived == false) {
-
-    while (Serial.available() > 0) {
-      char readedChar = Serial.read();
-
-      if (readedChar == 'O') {
-        oLetterReceived = true;
-      }
-      else if (readedChar == 'K' && oLetterReceived) {
-        kLetterReceived = true;
-      }
-    }
-  }
+  char *responce = getData();
+//    Serial.println(responce);
+  if (responce[0] != 'O') { return false; }
+  if (responce[1] != 'K') { return false; }
+//  if (responce[2] != '\0') { return false; }
+    
+  return true;
 }
 
 void BaseCommunicationManager::enterMode(int8_t mode) {
@@ -65,8 +57,28 @@ void BaseCommunicationManager::send(int16_t data) {
   //    Serial.write(&data, sizeof(data));
 }
 
-int16_t BaseCommunicationManager::getData() {
-  Serial.read();
+char *BaseCommunicationManager::getData() {
+  byte index = 0;
+  char endMarker = '\0'; // because every responce should end in \r\n\0 (CR+LF+TERM)
+
+  bool newData = false;
+  static char receivedChars[MAX_MESSAGE_LENGTH];
+
+  while (Serial.available() > 0 && newData == false) {
+    char receivedCharacter = Serial.read();
+    if (receivedCharacter != endMarker) {
+      receivedChars[index] = receivedCharacter;
+      index++;
+      if (index >= MAX_MESSAGE_LENGTH) {
+        index = MAX_MESSAGE_LENGTH - 1;
+      }
+    }
+    else {
+      receivedChars[index] = '\0'; // terminate the string
+      newData = true;
+    }
+  }
+  return receivedChars;
 }
 
 #pragma mark - Computed Variables

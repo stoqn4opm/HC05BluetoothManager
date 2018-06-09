@@ -32,7 +32,7 @@ BaseCommunicationManager* MasterCommunicationManager::shared() {
 
 #pragma mark - Module Specific Init
 
-void MasterCommunicationManager::performModuleInit() {
+bool MasterCommunicationManager::performModuleInit() {
     Serial.begin(BAUD_RATE_ATMODE);
     enterMode(MODE_ATCOMMAND);
     

@@ -18,6 +18,8 @@
 #define MODE_CONTROL_KEY_PIN 12
 #define POWER_CONTROL_PIN    9
 
+#define MAX_MESSAGE_LENGTH  10 // bytes
+
 #define MODE_NORMAL    0x00
 #define MODE_ATCOMMAND 0x02
 #define MODE_SLEEP     0x01
@@ -31,14 +33,14 @@ class BaseCommunicationManager {
 
   protected:
     static BaseCommunicationManager *instance;
-    virtual void performModuleInit() = 0;
+    virtual bool performModuleInit() = 0;
     void enterMode(int8_t mode); // use MODE_NORMAL and MODE_ATCOMMAND
-    bool sendCommand(String command);                                                                                                                                                   ;
+    bool sendCommand(String command);
   public:
     bool isConnected();
     void update();
     void send(int16_t data);
-    int16_t getData();
+    char *getData();
     int8_t countOfBytesAvailable();
 };
 

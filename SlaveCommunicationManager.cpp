@@ -17,7 +17,11 @@ SlaveCommunicationManager::SlaveCommunicationManager() {
     pinMode(POWER_CONTROL_PIN, OUTPUT);
     
     if (!AVRUserDefaults::isBluetoothAlreadyConfigured()) {
-        performModuleInit();
+        bool result = performModuleInit();
+        if (result == false) {
+           enterMode(MODE_SLEEP);
+           delay(100000);   
+        }
     }
     enterMode(MODE_NORMAL);
     Serial.begin(BAUD_RATE_NORMAL);
@@ -32,20 +36,21 @@ BaseCommunicationManager* SlaveCommunicationManager::shared() {
 
 #pragma mark - Module Specific Init
 
-void SlaveCommunicationManager::performModuleInit() {
+bool SlaveCommunicationManager::performModuleInit() {
     Serial.begin(BAUD_RATE_ATMODE);
     enterMode(MODE_ATCOMMAND);
     delay(700);
-    sendCommand("AT+ORGL");
-    sendCommand("AT+RMAAD");
-    sendCommand("AT+UART=9600,0,0");
-    sendCommand("AT+NAME=NES Controller");
-    sendCommand("AT+PSWD=0000");
-    sendCommand("AT+ROLE=0");
-    sendCommand("AT+CMODE=1");
-    sendCommand("AT+CLASS=73F4"); // custom so that its harder to be discovered
-    sendCommand("AT+IAC=9E8B33"); // liac
+    if (sendCommand("AT+ORGL") == false) { return false; }
+    if (sendCommand("AT+RMAAD") == false) { return false; }
+    if (sendCommand("AT+UART=9600,0,0") == false) { return false; }
+    if (sendCommand("AT+NAME=NES Controller") == false) { return false; }
+    if (sendCommand("AT+PSWD=0000") == false) { return false; }
+    if (sendCommand("AT+ROLE=0") == false) { return false; }
+    if (sendCommand("AT+CMODE=1") == false) { return false; }
+    if (sendCommand("AT+CLASS=73F4") == false) { return false; } // custom so that its harder to be discovered
+    if (sendCommand("AT+IAC=9E8B33") == false) { return false; } // liac
     
 //    AVRUserDefaults::setIsBluetoothAlreadyConfigured(true);
     Serial.end();
+    return true;
 }
