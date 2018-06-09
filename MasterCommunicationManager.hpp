@@ -14,6 +14,8 @@
 class MasterCommunicationManager: BaseCommunicationManager {
 private:
     MasterCommunicationManager();
+    char *searchForSlave();
+    void sendInitOrBlock();
 protected:
     virtual bool performModuleInit();
 public:

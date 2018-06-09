@@ -29,9 +29,7 @@ SlaveCommunicationManager::SlaveCommunicationManager() {
 }
 
 BaseCommunicationManager* SlaveCommunicationManager::shared() {
-    if (instance == 0) {
-        instance = new SlaveCommunicationManager();
-    }
+    if (instance == 0) { instance = new SlaveCommunicationManager(); }
     return instance;
 }
 
@@ -40,7 +38,7 @@ BaseCommunicationManager* SlaveCommunicationManager::shared() {
 bool SlaveCommunicationManager::performModuleInit() {
     Serial.begin(BAUD_RATE_ATMODE);
     enterMode(MODE_ATCOMMAND);
-    delay(3000); // because i saw it fail on 700
+    delay(BL_BOOT_TIME); // because i saw it fail on 700
     if (sendCommand("AT+ORGL")                  == false) { return false; }
     if (sendCommand("AT+RMAAD")                 == false) { return false; }
     if (sendCommand("AT+UART=9600,0,0")         == false) { return false; }

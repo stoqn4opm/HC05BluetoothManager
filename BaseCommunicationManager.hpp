@@ -18,7 +18,9 @@
 #define MODE_CONTROL_KEY_PIN 12
 #define POWER_CONTROL_PIN    9
 
-#define MAX_MESSAGE_LENGTH  10 // bytes
+#define MAX_MESSAGE_LENGTH  35 // bytes
+#define BL_ADDRESS_LENGTH   15 // bytes: 14 chars address + '\0'
+#define BL_BOOT_TIME        3000 // miliseconds
 
 #define MODE_NORMAL    0x00
 #define MODE_ATCOMMAND 0x02
