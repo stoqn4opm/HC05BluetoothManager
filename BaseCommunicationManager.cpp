@@ -27,7 +27,9 @@ bool BaseCommunicationManager::sendCommand(String command) {
 //    Serial.println(responce);
   if (responce[0] != 'O') { return false; }
   if (responce[1] != 'K') { return false; }
-//  if (responce[2] != '\0') { return false; }
+  if (responce[2] != '\r') { return false; }
+  if (responce[3] != '\n') { return false; }
+  if (responce[4] != '\0') { return false; }
     
   return true;
 }
