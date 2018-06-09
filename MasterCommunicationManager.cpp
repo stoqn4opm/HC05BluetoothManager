@@ -26,8 +26,11 @@ MasterCommunicationManager::MasterCommunicationManager() {
             result = performModuleInit();
         }
         char *slave = searchForSlave();
+        bool isConnected = tryConnectingWithSlave(slave);
         Serial.print("slave found");
         Serial.println(slave);
+        Serial.print("is connected ");
+        Serial.println(isConnected);
         Serial.flush();
         Serial.end();
 //        AVRUserDefaults::setIsBluetoothAlreadyConfigured(true);
@@ -98,4 +101,49 @@ char* MasterCommunicationManager::searchForSlave() {
     }
     result[14] = '\0';
     return result; // sample result: 98D3,21,FC7AF7
+}
+
+#pragma mark - Connect with Slave
+
+bool MasterCommunicationManager::tryConnectingWithSlave(char slave[BL_ADDRESS_LENGTH]) {
+    
+    char pairCommand[BL_ADDRESS_LENGTH + 11] = "AT+PAIR=";
+    strcat(pairCommand, slave);
+    strcat(pairCommand, ",20");
+    
+    char linkCommand[BL_ADDRESS_LENGTH + 8] = "AT+LINK=";
+    strcat(linkCommand, slave);
+    
+    Serial.setTimeout(20000); // 20 sec timeout for responce
+    
+    bool pairPassed = false;
+    bool linkPassed = false;
+    
+    int8_t numberOfAttempts = 0;
+    
+    do {
+    
+        if (numberOfAttempts >= 10) {
+            Serial.setTimeout(1000);
+            return false;
+        }
+        
+        numberOfAttempts++;
+        
+        
+        if (pairPassed == false) {
+            pairPassed = sendCommand(pairCommand);
+            continue;
+        }
+        
+        if (linkPassed == false) {
+            linkPassed = sendCommand(linkCommand);
+            continue;
+        }
+        
+    } while (linkPassed == false);
+    
+    Serial.setTimeout(1000);
+    
+    return true;
 }

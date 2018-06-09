@@ -15,6 +15,7 @@ class MasterCommunicationManager: BaseCommunicationManager {
 private:
     MasterCommunicationManager();
     char *searchForSlave();
+    bool tryConnectingWithSlave(char slave[BL_ADDRESS_LENGTH]);
 protected:
     virtual bool performModuleInit();
 public:
