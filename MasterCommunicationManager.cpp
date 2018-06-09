@@ -130,7 +130,6 @@ bool MasterCommunicationManager::tryConnectingWithSlave(char slave[BL_ADDRESS_LE
         
         numberOfAttempts++;
         
-        
         if (pairPassed == false) {
             pairPassed = sendCommand(pairCommand);
             continue;

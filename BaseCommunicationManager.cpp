@@ -24,7 +24,18 @@ bool BaseCommunicationManager::sendCommand(String command) {
     Serial.flush(); // Waits for the transmission of outgoing serial data to complete.
     delay(600); // > 1000 from datasheet for HC-06, tested and 107 fails, 114 passes
     
-    char *responce = getData();
+    size_t countOfBytes = 0;
+    char responce[5]; // OK\0
+    
+    Serial.setTimeout(10500);
+    
+    do {
+        countOfBytes = Serial.readBytesUntil('\0', responce, 4);
+        responce[4] = '\0';
+    } while (countOfBytes == 0);
+    
+    Serial.setTimeout(1000);
+    
     if (responce[0] != 'O')  { return false; }
     if (responce[1] != 'K')  { return false; }
     if (responce[2] != '\r') { return false; }
