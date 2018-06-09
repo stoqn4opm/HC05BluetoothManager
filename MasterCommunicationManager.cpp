@@ -54,29 +54,28 @@ bool MasterCommunicationManager::performModuleInit() {
     if (sendCommand("AT+CMODE=1")               == false) { return false; }
     if (sendCommand("AT+CLASS=73F4")            == false) { return false; } // custom so that its harder to be discovered
     if (sendCommand("AT+IAC=9E8B33")            == false) { return false; } // liac
-    if (sendCommand("AT+INQM=1,1,10")           == false) { return false; }; // (rssiSearch, CountOfResults, durationOfSearch)
+    if (sendCommand("AT+INQM=1,1,10")           == false) { return false; } // (rssiSearch, CountOfResults, durationOfSearch)
 
     return true;
 }
 
 #pragma mark - Searching For Slave
 
-void MasterCommunicationManager::sendInitOrBlock() {
-    bool initSend = sendCommand("AT+INIT");
-    while (initSend == false) {
-        initSend = sendCommand("AT+INIT");
-    }
-}
-
 char* MasterCommunicationManager::searchForSlave() {
-    
-    sendInitOrBlock();
     
     size_t countOfBytes = 0;
     char responce[MAX_MESSAGE_LENGTH];
+    bool initSend = false;
     
     do {
-
+        
+        //MARK: here i can add check to sleep the system after
+        
+        if (initSend == false) {
+            initSend = sendCommand("AT+INIT");
+            continue;
+        }
+        
         delay(300); // works just fine without it but lets be on the safe side
         Serial.println("AT+INQ");
         Serial.flush(); // Waits for the transmission of outgoing serial data to complete.
@@ -88,9 +87,7 @@ char* MasterCommunicationManager::searchForSlave() {
     } while (countOfBytes < 3);
     
     Serial.setTimeout(1000); // reverting to the default value
-    Serial.print("responce ");
-    Serial.println(responce);
-    
+
     static char result[BL_ADDRESS_LENGTH];
 
     // Responce will be in the form: +INQ:98D3:21:FC7AF7,73F4,7FFF
