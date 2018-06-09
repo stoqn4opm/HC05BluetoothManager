@@ -26,7 +26,7 @@ MasterCommunicationManager::MasterCommunicationManager() {
             result = performModuleInit();
         }
         char *slave = searchForSlave();
-        Serial.print("slave found :");
+        Serial.print("slave found");
         Serial.println(slave);
         Serial.flush();
         Serial.end();
@@ -72,30 +72,32 @@ char* MasterCommunicationManager::searchForSlave() {
     
     sendInitOrBlock();
     
+    size_t countOfBytes = 0;
     char responce[MAX_MESSAGE_LENGTH];
     
-    delay(300); // works just fine without it but lets be on the safe side
-    Serial.println("AT+INQ");
-    Serial.flush(); // Waits for the transmission of outgoing serial data to complete.
+    do {
+
+        delay(300); // works just fine without it but lets be on the safe side
+        Serial.println("AT+INQ");
+        Serial.flush(); // Waits for the transmission of outgoing serial data to complete.
+        
+        Serial.setTimeout(10500); // 10.5 secs. Its important to be more that the scan period thats currently set to 10 (AT+INQM=1,1,10)
+        countOfBytes = Serial.readBytesUntil('\r', responce, MAX_MESSAGE_LENGTH - 1);
+        responce[MAX_MESSAGE_LENGTH - 1] = '\0';
+
+    } while (countOfBytes < 3);
     
-    Serial.setTimeout(10000);
-    size_t countOfBytes = Serial.readBytesUntil('\r', responce, MAX_MESSAGE_LENGTH - 1);
-    responce[MAX_MESSAGE_LENGTH - 1] = '\0';
-//    do {
-//
-//        while (Serial.available() > 0) {
-//        }
-//
-//    } while (responce[0] != '\0');
-    
-    
+    Serial.setTimeout(1000); // reverting to the default value
     Serial.print("responce ");
     Serial.println(responce);
     
     static char result[BL_ADDRESS_LENGTH];
-//    slave found :98D3:,2:,168EC  || 98D3,21,FC7AF7
-    for (int8_t i = 0; i < 14; i++) {
-        result[i] = (i == 5 || i == 8) ? ',' : responce[i + 5];
+
+    // Responce will be in the form: +INQ:98D3:21:FC7AF7,73F4,7FFF
+    // and should be converted to 98D3,21,FC7AF7
+    
+    for (int8_t i = 5; i < 19; i++) {
+        result[i - 5] = (i == 9 ||i == 12) ? ',' : responce[i];
     }
     result[14] = '\0';
     return result; // sample result: 98D3,21,FC7AF7

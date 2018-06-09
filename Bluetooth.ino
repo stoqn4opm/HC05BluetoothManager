@@ -1,4 +1,4 @@
-#include "SlaveCommunicationManager.hpp"
+#include "MasterCommunicationManager.hpp"
 
 void setup() {
   // put your setup code here, to run once:
@@ -6,7 +6,8 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
-    bool isConnected = SlaveCommunicationManager::shared()->isConnected();
-    SlaveCommunicationManager::shared()->update();
+    bool isConnected = MasterCommunicationManager::shared()->isConnected();
+    MasterCommunicationManager::shared()->update();
+    Serial.print("MasterCommunicationManager is connected:");
     Serial.println(isConnected);
 }
