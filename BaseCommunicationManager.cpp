@@ -15,76 +15,75 @@ BaseCommunicationManager* BaseCommunicationManager::instance = 0;
 #pragma mark - Common Update Loop
 
 void BaseCommunicationManager::update() {
-
+    
 }
 
 bool BaseCommunicationManager::sendCommand(String command) {
-  Serial.println(command);
-  Serial.flush(); // Waits for the transmission of outgoing serial data to complete.
-  delay(250); // > 1000 from datasheet for HC-06, tested and 107 fails, 114 passes
-
-  char *responce = getData();
-//    Serial.println(responce);
-  if (responce[0] != 'O') { return false; }
-  if (responce[1] != 'K') { return false; }
-  if (responce[2] != '\r') { return false; }
-  if (responce[3] != '\n') { return false; }
-  if (responce[4] != '\0') { return false; }
+    delay(300); // works just fine without it but lets be on the safe side
+    Serial.println(command);
+    Serial.flush(); // Waits for the transmission of outgoing serial data to complete.
+    delay(600); // > 1000 from datasheet for HC-06, tested and 107 fails, 114 passes
     
-  return true;
+    char *responce = getData();
+    if (responce[0] != 'O')  { return false; }
+    if (responce[1] != 'K')  { return false; }
+    if (responce[2] != '\r') { return false; }
+    if (responce[3] != '\n') { return false; }
+    if (responce[4] != '\0') { return false; }
+    
+    return true;
 }
 
 void BaseCommunicationManager::enterMode(int8_t mode) {
-
-  if (mode == MODE_SLEEP) {
-    digitalWrite(POWER_CONTROL_PIN, LOW);
-    digitalWrite(MODE_CONTROL_KEY_PIN, LOW);
-    return;
-  }
-
-  digitalWrite(POWER_CONTROL_PIN, LOW); // for N Channel mosfet base control
-  digitalWrite(MODE_CONTROL_KEY_PIN, mode == MODE_NORMAL ? LOW : HIGH);
-  delay(10);
-  digitalWrite(POWER_CONTROL_PIN, HIGH); // for N Channel mosfet base control
+    
+    if (mode == MODE_SLEEP) {
+        digitalWrite(POWER_CONTROL_PIN, LOW);
+        digitalWrite(MODE_CONTROL_KEY_PIN, LOW);
+        return;
+    }
+    
+    digitalWrite(POWER_CONTROL_PIN, LOW); // for N Channel mosfet base control
+    digitalWrite(MODE_CONTROL_KEY_PIN, mode == MODE_NORMAL ? LOW : HIGH);
+    delay(10);
+    digitalWrite(POWER_CONTROL_PIN, HIGH); // for N Channel mosfet base control
 }
 
 #pragma mark - Common Send/Receive Data
 
 int8_t BaseCommunicationManager::countOfBytesAvailable() {
-  return Serial.available();
+    return Serial.available();
 }
 
 void BaseCommunicationManager::send(int16_t data) {
-
-  //    Serial.write(&data, sizeof(data));
+    //    Serial.write(&data, sizeof(data));
 }
 
 char *BaseCommunicationManager::getData() {
-  byte index = 0;
-  char endMarker = '\0'; // because every responce should end in \r\n\0 (CR+LF+TERM)
-
-  bool newData = false;
-  static char receivedChars[MAX_MESSAGE_LENGTH];
-
-  while (Serial.available() > 0 && newData == false) {
-    char receivedCharacter = Serial.read();
-    if (receivedCharacter != endMarker) {
-      receivedChars[index] = receivedCharacter;
-      index++;
-      if (index >= MAX_MESSAGE_LENGTH) {
-        index = MAX_MESSAGE_LENGTH - 1;
-      }
+    byte index = 0;
+    char endMarker = '\0'; // because every responce should end in \r\n\0 (CR+LF+TERM)
+    
+    bool newData = false;
+    static char receivedChars[MAX_MESSAGE_LENGTH];
+    
+    while (Serial.available() > 0 && newData == false) {
+        char receivedCharacter = Serial.read();
+        if (receivedCharacter != endMarker) {
+            receivedChars[index] = receivedCharacter;
+            index++;
+            if (index >= MAX_MESSAGE_LENGTH) {
+                index = MAX_MESSAGE_LENGTH - 1;
+            }
+        }
+        else {
+            receivedChars[index] = '\0'; // terminate the string
+            newData = true;
+        }
     }
-    else {
-      receivedChars[index] = '\0'; // terminate the string
-      newData = true;
-    }
-  }
-  return receivedChars;
+    return receivedChars;
 }
 
 #pragma mark - Computed Variables
 
 bool BaseCommunicationManager::isConnected() {
-  return digitalRead(CONNECTION_CHECK_PIN) == HIGH;
+    return digitalRead(CONNECTION_CHECK_PIN) == HIGH;
 }

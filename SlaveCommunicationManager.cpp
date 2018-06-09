@@ -18,9 +18,10 @@ SlaveCommunicationManager::SlaveCommunicationManager() {
     
     if (!AVRUserDefaults::isBluetoothAlreadyConfigured()) {
         bool result = performModuleInit();
-        if (result == false) {
-           enterMode(MODE_SLEEP);
-           delay(100000);   
+        while (result == false) {
+            enterMode(MODE_SLEEP);
+            delay(1000);
+            result = performModuleInit();
         }
     }
     enterMode(MODE_NORMAL);
@@ -39,18 +40,18 @@ BaseCommunicationManager* SlaveCommunicationManager::shared() {
 bool SlaveCommunicationManager::performModuleInit() {
     Serial.begin(BAUD_RATE_ATMODE);
     enterMode(MODE_ATCOMMAND);
-    delay(700);
-    if (sendCommand("AT+ORGL") == false) { return false; }
-    if (sendCommand("AT+RMAAD") == false) { return false; }
-    if (sendCommand("AT+UART=9600,0,0") == false) { return false; }
-    if (sendCommand("AT+NAME=NES Controller") == false) { return false; }
-    if (sendCommand("AT+PSWD=0000") == false) { return false; }
-    if (sendCommand("AT+ROLE=0") == false) { return false; }
-    if (sendCommand("AT+CMODE=1") == false) { return false; }
-    if (sendCommand("AT+CLASS=73F4") == false) { return false; } // custom so that its harder to be discovered
-    if (sendCommand("AT+IAC=9E8B33") == false) { return false; } // liac
+    delay(3000); // because i saw it fail on 700
+    if (sendCommand("AT+ORGL")                  == false) { return false; }
+    if (sendCommand("AT+RMAAD")                 == false) { return false; }
+    if (sendCommand("AT+UART=9600,0,0")         == false) { return false; }
+    if (sendCommand("AT+NAME=NES Controller")   == false) { return false; }
+    if (sendCommand("AT+PSWD=0000")             == false) { return false; }
+    if (sendCommand("AT+ROLE=0")                == false) { return false; }
+    if (sendCommand("AT+CMODE=1")               == false) { return false; }
+    if (sendCommand("AT+CLASS=73F4")            == false) { return false; } // custom so that its harder to be discovered
+    if (sendCommand("AT+IAC=9E8B33")            == false) { return false; } // liac
     
-//    AVRUserDefaults::setIsBluetoothAlreadyConfigured(true);
     Serial.end();
+//    AVRUserDefaults::setIsBluetoothAlreadyConfigured(true);
     return true;
 }
