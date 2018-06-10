@@ -18,6 +18,7 @@ protected:
     virtual bool performModuleInit();
 public:
     static BaseCommunicationManager *shared();
+    virtual void update();
 };
 
 #endif /* SlaveCommunicationManager_hpp */

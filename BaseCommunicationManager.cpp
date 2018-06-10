@@ -12,12 +12,6 @@
 
 BaseCommunicationManager* BaseCommunicationManager::instance = 0;
 
-#pragma mark - Common Update Loop
-
-void BaseCommunicationManager::update() {
-    
-}
-
 CommandResult BaseCommunicationManager::sendCommand(char command[], int8_t timeOutInSecs) {
 //    delay(300); // works just fine without it but lets be on the safe side
     Serial.println(command);

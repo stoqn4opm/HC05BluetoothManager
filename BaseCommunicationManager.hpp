@@ -46,7 +46,7 @@ class BaseCommunicationManager {
     CommandResult sendCommand(char command[], int8_t timeOutInSecs);
   public:
     bool isConnected();
-    void update();
+    virtual void update() = 0;
     void send(int16_t data);
     char *getData();
     int8_t countOfBytesAvailable();

@@ -15,6 +15,65 @@ MasterCommunicationManager::MasterCommunicationManager() {
     pinMode(CONNECTION_CHECK_PIN, INPUT);
     pinMode(MODE_CONTROL_KEY_PIN, OUTPUT);
     pinMode(POWER_CONTROL_PIN, OUTPUT);
+    pinMode(MASTER_SYNC_BUTTON_PIN, INPUT);
+    
+    initializeAndFindSlaveIfNeeded();
+    
+    enterMode(MODE_NORMAL);
+    Serial.begin(BAUD_RATE_NORMAL);
+}
+
+BaseCommunicationManager* MasterCommunicationManager::shared() {
+    if (instance == 0) { instance = new MasterCommunicationManager(); }
+    return instance;
+}
+
+#pragma mark - Update Loop
+
+void MasterCommunicationManager::update() {
+    
+    // forget slave button
+    if (digitalRead(MASTER_SYNC_BUTTON_PIN) == HIGH) {
+        AVRUserDefaults::setIsBluetoothAlreadyConfigured(false);
+    }
+    initializeAndFindSlaveIfNeeded();
+    
+    if (isConnected() == false) {
+        autoConnectSlaveIfNeeded();
+    }
+}
+
+#pragma mark - Auto Connection
+
+void MasterCommunicationManager::autoConnectSlaveIfNeeded() {
+   
+    if (setupNewSlaveForAutoConnection) {
+        
+        Serial.end();
+        Serial.begin(BAUD_RATE_ATMODE);
+        enterMode(MODE_ATCOMMAND);
+        
+        char bindCommand[BL_ADDRESS_LENGTH + 8] = "AT+BIND=";
+        strcat(bindCommand, slaveForAutoConnection);
+        
+        if (sendCommand(bindCommand, 1).isOK == false) { return; }
+        if (sendCommand("AT+CMODE=0", 1).isOK == false) { return; }
+        
+        Serial.end();
+        
+        AVRUserDefaults::setIsBluetoothAlreadyConfigured(true);
+        while (AVRUserDefaults::isBluetoothAlreadyConfigured() == false) {};
+        
+        enterMode(MODE_NORMAL);
+        setupNewSlaveForAutoConnection = false;
+        strcpy(slaveForAutoConnection, "");
+        Serial.begin(BAUD_RATE_NORMAL);
+    }
+}
+
+#pragma mark - Module Specific Init
+
+void MasterCommunicationManager::initializeAndFindSlaveIfNeeded() {
     
     if (!AVRUserDefaults::isBluetoothAlreadyConfigured()) {
         Serial.begin(BAUD_RATE_ATMODE);
@@ -25,23 +84,22 @@ MasterCommunicationManager::MasterCommunicationManager() {
             delay(1000);
             result = performModuleInit();
         }
-        char *slave = searchForSlave();
-        bool isConnected = tryConnectingWithSlave(slave);
+        char *slave = findFirstSlave();
+        tryConnectingWithSlave(slave);
+        
+        delay(5000);
+        
+        while (isConnected() == false) { };
         
         Serial.flush();
         Serial.end();
-//        AVRUserDefaults::setIsBluetoothAlreadyConfigured(true);
+        
+        if (isConnected()) {
+            strcpy(slaveForAutoConnection, slave);
+            setupNewSlaveForAutoConnection = true;
+        }
     }
-    enterMode(MODE_NORMAL);
-    Serial.begin(BAUD_RATE_NORMAL);
 }
-
-BaseCommunicationManager* MasterCommunicationManager::shared() {
-    if (instance == 0) { instance = new MasterCommunicationManager(); }
-    return instance;
-}
-
-#pragma mark - Module Specific Init
 
 bool MasterCommunicationManager::performModuleInit() {
     delay(BL_BOOT_TIME); // because i saw it fail on 700
@@ -61,7 +119,7 @@ bool MasterCommunicationManager::performModuleInit() {
 
 #pragma mark - Searching For Slave
 
-char* MasterCommunicationManager::searchForSlave() {
+char* MasterCommunicationManager::findFirstSlave() {
     
     char responce[MAX_MESSAGE_LENGTH];
     bool initSend = false;

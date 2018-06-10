@@ -33,6 +33,11 @@ BaseCommunicationManager* SlaveCommunicationManager::shared() {
     return instance;
 }
 
+
+void SlaveCommunicationManager::update() {
+    
+}
+
 #pragma mark - Module Specific Init
 
 bool SlaveCommunicationManager::performModuleInit() {
