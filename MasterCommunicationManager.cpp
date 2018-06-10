@@ -106,26 +106,16 @@ bool MasterCommunicationManager::tryConnectingWithSlave(char slave[BL_ADDRESS_LE
     char linkCommand[BL_ADDRESS_LENGTH + 8] = "AT+LINK=";
     strcat(linkCommand, slave);
     
-    bool pairPassed = false;
     bool linkPassed = false;
-    
     int8_t numberOfAttempts = 0;
     
     do {
     
-        if (numberOfAttempts >= 10) { return false; }
+        if (numberOfAttempts >= 20) { return false; }
         
         numberOfAttempts++;
-        
-        if (pairPassed && linkPassed == false) {
-            linkPassed = sendCommand(linkCommand, 11).isOK; // 20 sec timeout for responce
-            continue;
-        }
-        
-        if (pairPassed == false) {
-            pairPassed = sendCommand(pairCommand, 11).isOK; // 20 sec timeout for responce
-            continue;
-        }
+        sendCommand(pairCommand, 11); // 20 sec timeout for responce
+        linkPassed = sendCommand(linkCommand, 11).isOK; // 20 sec timeout for responce
         
     } while (linkPassed == false);
     
