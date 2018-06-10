@@ -81,7 +81,7 @@ char* MasterCommunicationManager::searchForSlave() {
         byteCount = result.byteCount;
         strcpy(responce, result.responce);
 
-    } while (byteCount == 0);
+    } while (byteCount <= 31); // because responce will be +INQ:98D3:32:2168EC,73F4,FFB7<0D><0A>OK<0D><0A>
 
     static char result[BL_ADDRESS_LENGTH];
 

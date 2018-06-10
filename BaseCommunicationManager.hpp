@@ -18,7 +18,7 @@
 #define MODE_CONTROL_KEY_PIN 12
 #define POWER_CONTROL_PIN    9
 
-#define MAX_MESSAGE_LENGTH  35 // bytes
+#define MAX_MESSAGE_LENGTH  35 // bytes longest messege will be +INQ:98D3:32:2168EC,73F4,FFB7<0D><0A>OK<0D><0A>
 #define BL_ADDRESS_LENGTH   15 // bytes: 14 chars address + '\0'
 #define BL_BOOT_TIME        3000 // miliseconds
 
