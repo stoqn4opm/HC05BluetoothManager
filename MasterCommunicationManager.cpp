@@ -27,10 +27,7 @@ MasterCommunicationManager::MasterCommunicationManager() {
         }
         char *slave = searchForSlave();
         bool isConnected = tryConnectingWithSlave(slave);
-        Serial.print("slave found");
-        Serial.println(slave);
-        Serial.print("is connected ");
-        Serial.println(isConnected);
+        
         Serial.flush();
         Serial.end();
 //        AVRUserDefaults::setIsBluetoothAlreadyConfigured(true);
@@ -48,16 +45,16 @@ BaseCommunicationManager* MasterCommunicationManager::shared() {
 
 bool MasterCommunicationManager::performModuleInit() {
     delay(BL_BOOT_TIME); // because i saw it fail on 700
-    if (sendCommand("AT+ORGL")                  == false) { return false; }
-    if (sendCommand("AT+RMAAD")                 == false) { return false; }
-    if (sendCommand("AT+UART=9600,0,0")         == false) { return false; }
-    if (sendCommand("AT+NAME=NES Receiver")     == false) { return false; }
-    if (sendCommand("AT+PSWD=0000")             == false) { return false; }
-    if (sendCommand("AT+ROLE=1")                == false) { return false; }
-    if (sendCommand("AT+CMODE=1")               == false) { return false; }
-    if (sendCommand("AT+CLASS=73F4")            == false) { return false; } // custom so that its harder to be discovered
-    if (sendCommand("AT+IAC=9E8B33")            == false) { return false; } // liac
-    if (sendCommand("AT+INQM=1,1,10")           == false) { return false; } // (rssiSearch, CountOfResults, durationOfSearch)
+    if (sendCommand("AT+ORGL",              1).isOK == false) { return false; }
+    if (sendCommand("AT+RMAAD",             1).isOK == false) { return false; }
+    if (sendCommand("AT+UART=9600,0,0",     1).isOK == false) { return false; }
+    if (sendCommand("AT+NAME=NES Receiver", 1).isOK == false) { return false; }
+    if (sendCommand("AT+PSWD=0000",         1).isOK == false) { return false; }
+    if (sendCommand("AT+ROLE=1",            1).isOK == false) { return false; }
+    if (sendCommand("AT+CMODE=1",           1).isOK == false) { return false; }
+    if (sendCommand("AT+CLASS=73F4",        1).isOK == false) { return false; } // custom so that its harder to be discovered
+    if (sendCommand("AT+IAC=9E8B33",        1).isOK == false) { return false; } // liac
+    if (sendCommand("AT+INQM=1,1,10",       1).isOK == false) { return false; } // (rssiSearch, CountOfResults, durationOfSearch)
 
     return true;
 }
@@ -66,30 +63,25 @@ bool MasterCommunicationManager::performModuleInit() {
 
 char* MasterCommunicationManager::searchForSlave() {
     
-    size_t countOfBytes = 0;
     char responce[MAX_MESSAGE_LENGTH];
     bool initSend = false;
+    size_t byteCount = 0;
     
     do {
         
         //MARK: here i can add check to sleep the system after
         
         if (initSend == false) {
-            initSend = sendCommand("AT+INIT");
+            initSend = sendCommand("AT+INIT", 2).isOK;
             continue;
         }
         
-        delay(300); // works just fine without it but lets be on the safe side
-        Serial.println("AT+INQ");
-        Serial.flush(); // Waits for the transmission of outgoing serial data to complete.
+        CommandResult result = sendCommand("AT+INQ", 11);
         
-        Serial.setTimeout(10500); // 10.5 secs. Its important to be more that the scan period thats currently set to 10 (AT+INQM=1,1,10)
-        countOfBytes = Serial.readBytesUntil('\r', responce, MAX_MESSAGE_LENGTH - 1);
-        responce[MAX_MESSAGE_LENGTH - 1] = '\0';
+        byteCount = result.byteCount;
+        strcpy(responce, result.responce);
 
-    } while (countOfBytes < 3);
-    
-    Serial.setTimeout(1000); // reverting to the default value
+    } while (byteCount == 0);
 
     static char result[BL_ADDRESS_LENGTH];
 
@@ -109,12 +101,10 @@ bool MasterCommunicationManager::tryConnectingWithSlave(char slave[BL_ADDRESS_LE
     
     char pairCommand[BL_ADDRESS_LENGTH + 11] = "AT+PAIR=";
     strcat(pairCommand, slave);
-    strcat(pairCommand, ",20");
+    strcat(pairCommand, ",10");
     
     char linkCommand[BL_ADDRESS_LENGTH + 8] = "AT+LINK=";
     strcat(linkCommand, slave);
-    
-    Serial.setTimeout(20000); // 20 sec timeout for responce
     
     bool pairPassed = false;
     bool linkPassed = false;
@@ -123,26 +113,21 @@ bool MasterCommunicationManager::tryConnectingWithSlave(char slave[BL_ADDRESS_LE
     
     do {
     
-        if (numberOfAttempts >= 10) {
-            Serial.setTimeout(1000);
-            return false;
-        }
+        if (numberOfAttempts >= 10) { return false; }
         
         numberOfAttempts++;
         
-        if (pairPassed == false) {
-            pairPassed = sendCommand(pairCommand);
+        if (pairPassed && linkPassed == false) {
+            linkPassed = sendCommand(linkCommand, 11).isOK; // 20 sec timeout for responce
             continue;
         }
         
-        if (linkPassed == false) {
-            linkPassed = sendCommand(linkCommand);
+        if (pairPassed == false) {
+            pairPassed = sendCommand(pairCommand, 11).isOK; // 20 sec timeout for responce
             continue;
         }
         
     } while (linkPassed == false);
-    
-    Serial.setTimeout(1000);
     
     return true;
 }

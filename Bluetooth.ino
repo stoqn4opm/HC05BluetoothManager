@@ -8,6 +8,6 @@ void loop() {
   // put your main code here, to run repeatedly:
     bool isConnected = MasterCommunicationManager::shared()->isConnected();
     MasterCommunicationManager::shared()->update();
-    Serial.print("MasterCommunicationManager is connected:");
-    Serial.println(isConnected);
+//    Serial.print("MasterCommunicationManager is connected:");
+//    Serial.println(isConnected);
 }

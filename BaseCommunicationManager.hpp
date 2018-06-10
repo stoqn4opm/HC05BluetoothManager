@@ -31,13 +31,19 @@
 
 #pragma mark - Base Abstract Class Definition
 
+struct CommandResult {
+    bool isOK;
+    size_t byteCount;
+    char responce[MAX_MESSAGE_LENGTH];
+};
+
 class BaseCommunicationManager {
 
   protected:
     static BaseCommunicationManager *instance;
     virtual bool performModuleInit() = 0;
     void enterMode(int8_t mode); // use MODE_NORMAL and MODE_ATCOMMAND
-    bool sendCommand(String command);
+    CommandResult sendCommand(char command[], int8_t timeOutInSecs);
   public:
     bool isConnected();
     void update();

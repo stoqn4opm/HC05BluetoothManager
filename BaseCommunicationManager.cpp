@@ -18,31 +18,36 @@ void BaseCommunicationManager::update() {
     
 }
 
-bool BaseCommunicationManager::sendCommand(String command) {
-    delay(300); // works just fine without it but lets be on the safe side
+CommandResult BaseCommunicationManager::sendCommand(char command[], int8_t timeOutInSecs) {
+//    delay(300); // works just fine without it but lets be on the safe side
     Serial.println(command);
     Serial.flush(); // Waits for the transmission of outgoing serial data to complete.
-    delay(600); // > 1000 from datasheet for HC-06, tested and 107 fails, 114 passes
+//    delay(600); // > 1000 from datasheet for HC-06, tested and 107 fails, 114 passes
     
     size_t countOfBytes = 0;
-    char responce[5]; // OK\0
+    char responce[MAX_MESSAGE_LENGTH]; // OK\0
     
-    Serial.setTimeout(10500);
+    Serial.setTimeout(timeOutInSecs * 1000);
     
     do {
-        countOfBytes = Serial.readBytesUntil('\0', responce, 4);
-        responce[4] = '\0';
+        countOfBytes = Serial.readBytesUntil('\0', responce, MAX_MESSAGE_LENGTH - 1);
+        responce[MAX_MESSAGE_LENGTH - 1] = '\0';
     } while (countOfBytes == 0);
     
     Serial.setTimeout(1000);
     
-    if (responce[0] != 'O')  { return false; }
-    if (responce[1] != 'K')  { return false; }
-    if (responce[2] != '\r') { return false; }
-    if (responce[3] != '\n') { return false; }
-    if (responce[4] != '\0') { return false; }
+    CommandResult result;
+    result.byteCount = countOfBytes;
     
-    return true;
+    strcpy(result.responce, responce);
+    
+    if ((responce[0] != 'O')  ||
+        (responce[1] != 'K')  ||
+        (responce[2] != '\r') ||
+        (responce[3] != '\n')) { result.isOK = false; return result; }
+    
+    result.isOK = true;
+    return result;
 }
 
 void BaseCommunicationManager::enterMode(int8_t mode) {
