@@ -17,8 +17,16 @@ MasterCommunicationManager::MasterCommunicationManager() {
     pinMode(POWER_CONTROL_PIN, OUTPUT);
     pinMode(MASTER_SYNC_BUTTON_PIN, INPUT);
     
-    enterMode(MODE_NORMAL);
-    Serial.begin(BAUD_RATE_NORMAL);
+    if (AVRUserDefaults::isBluetoothAlreadyConfigured() && !AVRUserDefaults::isSlaveAlreadyConfigured()) {
+        searchForNewSlave();
+    } else {
+        // no need to enterMode(MODE_NORMAL) and wait for boot time
+        // because the first thing that will happen in update() is initializeAndFindSlaveIfNeeded()
+        // will get called, switching to MODE_ATCOMMAND if bluetooth is not configured!
+        if (!AVRUserDefaults::isBluetoothAlreadyConfigured()) { return; }
+        enterMode(MODE_NORMAL);
+        Serial.begin(BAUD_RATE_NORMAL);
+    }
 }
 
 BaseCommunicationManager* MasterCommunicationManager::shared() {
@@ -32,9 +40,48 @@ void MasterCommunicationManager::update() {
     
     // forget slave button
     if (digitalRead(MASTER_SYNC_BUTTON_PIN) == HIGH) {
-        AVRUserDefaults::setIsBluetoothAlreadyConfigured(false);
+        handleKeyHoldReset();
+    } else {
+        if (isInMiddleOfPattern) { searchForNewSlave(); }
+        isInMiddleOfPattern = false;
     }
+    
     initializeAndFindSlaveIfNeeded();
+}
+
+void MasterCommunicationManager::handleKeyHoldReset() {
+    
+    if (!isInMiddleOfPattern) {
+        isInMiddleOfPattern = true;
+        patternStartTime = millis();
+    } else {
+        unsigned long currentTime = millis();
+        
+        if (currentTime >= patternStartTime) {
+            if (currentTime - patternStartTime > RESET_KEY_HOLD_DURATION * 1000) {
+                // set flag in eeprom for starting a new initialization for the bluetooth module
+                AVRUserDefaults::setIsBluetoothAlreadyConfigured(false);
+                AVRUserDefaults::setIsSlaveAlreadyConfigured(false);
+                isInMiddleOfPattern = false;
+            }
+        } else {
+            isInMiddleOfPattern = false;
+        }
+    }
+}
+
+void MasterCommunicationManager::searchForNewSlave() {
+    enterMode(MODE_ATCOMMAND);
+    Serial.end();
+    Serial.begin(BAUD_RATE_ATMODE);
+    char *slave = findFirstSlave();
+    bool connected = tryConnectingWithSlave(slave);
+    
+    if (connected == false) { return; }
+    Serial.end();
+    
+    enterMode(MODE_NORMAL);
+    Serial.begin(BAUD_RATE_NORMAL);
 }
 
 #pragma mark - Module Specific Init
@@ -49,6 +96,8 @@ void MasterCommunicationManager::initializeAndFindSlaveIfNeeded() {
             enterMode(MODE_ATCOMMAND);
             result = performModuleInit();
         }
+        AVRUserDefaults::setIsBluetoothAlreadyConfigured(true);
+
         char *slave = findFirstSlave();
         bool connected = tryConnectingWithSlave(slave);
         
@@ -56,12 +105,10 @@ void MasterCommunicationManager::initializeAndFindSlaveIfNeeded() {
         
         Serial.end();
         
-        AVRUserDefaults::setIsBluetoothAlreadyConfigured(true);
         enterMode(MODE_NORMAL);
         Serial.begin(BAUD_RATE_NORMAL);
     }
 }
-
 
 bool MasterCommunicationManager::performModuleInit() {
     if (sendCommand("AT+ORGL",              1).isOK == false) { return false; }
@@ -91,7 +138,23 @@ char* MasterCommunicationManager::findFirstSlave() {
         //MARK: here i can add check to sleep the system after
         
         if (initSend == false) {
-            initSend = sendCommand("AT+INIT", 2).isOK;
+            CommandResult result = sendCommand("AT+INIT", 2);
+            if (result.isOK) {
+                initSend = true;
+            } else {
+                if (result.responce[0] == 'E' &&    // this error is fine
+                    result.responce[1] == 'R' &&    // because ERROR:(17)
+                    result.responce[2] == 'R' &&    // means SPP Library
+                    result.responce[3] == '0' &&    // already initialized
+                    result.responce[4] == 'R' &&
+                    result.responce[5] == ':' &&
+                    result.responce[6] == '(' &&
+                    result.responce[7] == '1' &&
+                    result.responce[8] == '7' &&
+                    result.responce[9] == ')') {
+                    initSend = true;
+                }
+            }
             continue;
         }
         
@@ -139,5 +202,6 @@ bool MasterCommunicationManager::tryConnectingWithSlave(char slave[BL_ADDRESS_LE
         
     } while (cmodePassed == false);
     
+    AVRUserDefaults::setIsSlaveAlreadyConfigured(true);
     return true;
 }

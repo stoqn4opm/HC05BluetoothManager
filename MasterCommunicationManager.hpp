@@ -11,7 +11,8 @@
 
 #include "BaseCommunicationManager.hpp"
 
-#define MASTER_SYNC_BUTTON_PIN 10
+#define MASTER_SYNC_BUTTON_PIN  10 // pin number
+#define RESET_KEY_HOLD_DURATION 7 // secs
 
 class MasterCommunicationManager: BaseCommunicationManager {
 private:
@@ -20,6 +21,10 @@ private:
     bool tryConnectingWithSlave(char slave[BL_ADDRESS_LENGTH]);
     void initializeAndFindSlaveIfNeeded();
     
+    bool isInMiddleOfPattern = false;
+    unsigned long patternStartTime;
+    void handleKeyHoldReset();
+    void searchForNewSlave();
 protected:
     virtual bool performModuleInit();
     
