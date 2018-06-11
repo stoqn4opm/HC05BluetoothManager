@@ -20,11 +20,6 @@ private:
     bool tryConnectingWithSlave(char slave[BL_ADDRESS_LENGTH]);
     void initializeAndFindSlaveIfNeeded();
     
-    bool setupNewSlaveForAutoConnection = false;
-    char slaveForAutoConnection[BL_ADDRESS_LENGTH];
-    
-    void autoConnectSlaveIfNeeded();
-    
 protected:
     virtual bool performModuleInit();
     

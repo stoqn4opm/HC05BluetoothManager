@@ -17,8 +17,6 @@ MasterCommunicationManager::MasterCommunicationManager() {
     pinMode(POWER_CONTROL_PIN, OUTPUT);
     pinMode(MASTER_SYNC_BUTTON_PIN, INPUT);
     
-    initializeAndFindSlaveIfNeeded();
-    
     enterMode(MODE_NORMAL);
     Serial.begin(BAUD_RATE_NORMAL);
 }
@@ -37,72 +35,35 @@ void MasterCommunicationManager::update() {
         AVRUserDefaults::setIsBluetoothAlreadyConfigured(false);
     }
     initializeAndFindSlaveIfNeeded();
-    
-    if (isConnected() == false) {
-        autoConnectSlaveIfNeeded();
-    }
-}
-
-#pragma mark - Auto Connection
-
-void MasterCommunicationManager::autoConnectSlaveIfNeeded() {
-   
-    if (setupNewSlaveForAutoConnection) {
-        
-        Serial.end();
-        Serial.begin(BAUD_RATE_ATMODE);
-        enterMode(MODE_ATCOMMAND);
-        
-        char bindCommand[BL_ADDRESS_LENGTH + 8] = "AT+BIND=";
-        strcat(bindCommand, slaveForAutoConnection);
-        
-        if (sendCommand(bindCommand, 1).isOK == false) { return; }
-        if (sendCommand("AT+CMODE=0", 1).isOK == false) { return; }
-        
-        Serial.end();
-        
-        AVRUserDefaults::setIsBluetoothAlreadyConfigured(true);
-        while (AVRUserDefaults::isBluetoothAlreadyConfigured() == false) {};
-        
-        enterMode(MODE_NORMAL);
-        setupNewSlaveForAutoConnection = false;
-        strcpy(slaveForAutoConnection, "");
-        Serial.begin(BAUD_RATE_NORMAL);
-    }
 }
 
 #pragma mark - Module Specific Init
 
 void MasterCommunicationManager::initializeAndFindSlaveIfNeeded() {
     
-    if (!AVRUserDefaults::isBluetoothAlreadyConfigured()) {
+    if (AVRUserDefaults::isBluetoothAlreadyConfigured() == false) {
         Serial.begin(BAUD_RATE_ATMODE);
         enterMode(MODE_ATCOMMAND);
         bool result = performModuleInit();
         while (result == false) {
-            enterMode(MODE_SLEEP);
-            delay(1000);
+            enterMode(MODE_ATCOMMAND);
             result = performModuleInit();
         }
         char *slave = findFirstSlave();
-        tryConnectingWithSlave(slave);
+        bool connected = tryConnectingWithSlave(slave);
         
-        delay(5000);
+        if (connected == false) { return; }
         
-        while (isConnected() == false) { };
-        
-        Serial.flush();
         Serial.end();
         
-        if (isConnected()) {
-            strcpy(slaveForAutoConnection, slave);
-            setupNewSlaveForAutoConnection = true;
-        }
+        AVRUserDefaults::setIsBluetoothAlreadyConfigured(true);
+        enterMode(MODE_NORMAL);
+        Serial.begin(BAUD_RATE_NORMAL);
     }
 }
 
+
 bool MasterCommunicationManager::performModuleInit() {
-    delay(BL_BOOT_TIME); // because i saw it fail on 700
     if (sendCommand("AT+ORGL",              1).isOK == false) { return false; }
     if (sendCommand("AT+RMAAD",             1).isOK == false) { return false; }
     if (sendCommand("AT+UART=9600,0,0",     1).isOK == false) { return false; }
@@ -159,12 +120,12 @@ bool MasterCommunicationManager::tryConnectingWithSlave(char slave[BL_ADDRESS_LE
     
     char pairCommand[BL_ADDRESS_LENGTH + 11] = "AT+PAIR=";
     strcat(pairCommand, slave);
-    strcat(pairCommand, ",10");
+    strcat(pairCommand, ",5");
     
-    char linkCommand[BL_ADDRESS_LENGTH + 8] = "AT+LINK=";
-    strcat(linkCommand, slave);
-    
-    bool linkPassed = false;
+    char bindCommand[BL_ADDRESS_LENGTH + 8] = "AT+BIND=";
+    strcat(bindCommand, slave);
+
+    bool cmodePassed = false;
     int8_t numberOfAttempts = 0;
     
     do {
@@ -172,10 +133,11 @@ bool MasterCommunicationManager::tryConnectingWithSlave(char slave[BL_ADDRESS_LE
         if (numberOfAttempts >= 20) { return false; }
         
         numberOfAttempts++;
-        sendCommand(pairCommand, 11); // 20 sec timeout for responce
-        linkPassed = sendCommand(linkCommand, 11).isOK; // 20 sec timeout for responce
+        sendCommand(pairCommand, 5);
+        sendCommand(bindCommand, 1);
+        cmodePassed = sendCommand("AT+CMODE=0", 1).isOK;
         
-    } while (linkPassed == false);
+    } while (cmodePassed == false);
     
     return true;
 }

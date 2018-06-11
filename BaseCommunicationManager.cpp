@@ -56,6 +56,7 @@ void BaseCommunicationManager::enterMode(int8_t mode) {
     digitalWrite(MODE_CONTROL_KEY_PIN, mode == MODE_NORMAL ? LOW : HIGH);
     delay(10);
     digitalWrite(POWER_CONTROL_PIN, HIGH); // for N Channel mosfet base control
+    delay(BL_BOOT_TIME); // because i saw it fail on 700
 }
 
 #pragma mark - Common Send/Receive Data
