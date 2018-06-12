@@ -23,8 +23,9 @@ CommandResult BaseCommunicationManager::sendCommand(char command[], int8_t timeO
     Serial.setTimeout(timeOutInSecs * 1000);
     
     do {
-        countOfBytes = Serial.readBytesUntil('\0', responce, MAX_MESSAGE_LENGTH - 1);
-        responce[MAX_MESSAGE_LENGTH - 1] = '\0';
+        countOfBytes = Serial.readBytesUntil('\n', responce, MAX_MESSAGE_LENGTH - 2);
+        responce[countOfBytes] = '\n';
+        responce[countOfBytes + 1] = '\0';
     } while (countOfBytes == 0);
     
     Serial.setTimeout(1000);

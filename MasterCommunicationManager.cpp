@@ -71,16 +71,20 @@ void MasterCommunicationManager::handleKeyHoldReset() {
 }
 
 void MasterCommunicationManager::searchForNewSlave() {
-    enterMode(MODE_ATCOMMAND);
+
     Serial.end();
     Serial.begin(BAUD_RATE_ATMODE);
-    char *slave = findSlave();
-    bool connected = tryConnectingWithSlave(slave);
-    
-    if (connected == false) { return; }
-    Serial.end();
-    
+
+    bool connected = false;
+    do {
+        enterMode(MODE_ATCOMMAND);
+        char *slave = findSlave();
+        connected = tryConnectingWithSlave(slave);
+    }
+    while (connected == false);
     enterMode(MODE_NORMAL);
+    
+    Serial.end();
     Serial.begin(BAUD_RATE_NORMAL);
 }
 
@@ -89,6 +93,7 @@ void MasterCommunicationManager::searchForNewSlave() {
 void MasterCommunicationManager::initializeAndFindSlaveIfNeeded() {
     
     if (AVRUserDefaults::isBluetoothAlreadyConfigured() == false) {
+        Serial.end();
         Serial.begin(BAUD_RATE_ATMODE);
         enterMode(MODE_ATCOMMAND);
         bool result = performModuleInit();
@@ -98,14 +103,15 @@ void MasterCommunicationManager::initializeAndFindSlaveIfNeeded() {
         }
         AVRUserDefaults::setIsBluetoothAlreadyConfigured(true);
 
-        char *slave = findSlave();
-        bool connected = tryConnectingWithSlave(slave);
-        
-        if (connected == false) { return; }
+        bool connected = false;
+        do {
+            char *slave = findSlave();
+            connected = tryConnectingWithSlave(slave);
+        }
+        while (connected == false);
+        enterMode(MODE_NORMAL);
         
         Serial.end();
-        
-        enterMode(MODE_NORMAL);
         Serial.begin(BAUD_RATE_NORMAL);
     }
 }
@@ -137,6 +143,9 @@ char* MasterCommunicationManager::findSlave() {
         
         //MARK: here i can add check to sleep the system after
         
+        Serial.end();   // flushing out the remaining part of old messages
+        Serial.begin(BAUD_RATE_ATMODE);
+        
         if (initSend == false) {
             CommandResult result = sendCommand("AT+INIT", 2);
             if (result.isOK) {
@@ -145,13 +154,15 @@ char* MasterCommunicationManager::findSlave() {
                 if (result.responce[0] == 'E' &&    // this error is fine
                     result.responce[1] == 'R' &&    // because ERROR:(17)
                     result.responce[2] == 'R' &&    // means SPP Library
-                    result.responce[3] == '0' &&    // already initialized
+                    result.responce[3] == 'O' &&    // already initialized
                     result.responce[4] == 'R' &&
                     result.responce[5] == ':' &&
                     result.responce[6] == '(' &&
                     result.responce[7] == '1' &&
                     result.responce[8] == '7' &&
                     result.responce[9] == ')') {
+                    Serial.end();   // flushing out the remaining part of message
+                    Serial.begin(BAUD_RATE_ATMODE);
                     initSend = true;
                 }
             }
@@ -163,8 +174,11 @@ char* MasterCommunicationManager::findSlave() {
         byteCount = result.byteCount;
         strcpy(responce, result.responce);
 
-    } while (byteCount <= 31); // because responce will be +INQ:98D3:32:2168EC,73F4,FFB7<0D><0A>OK<0D><0A>
+    } while (byteCount <= 20); // because responce will be +INQ:98D3:32:2168EC,73F4,FFB7<0D><0A>OK<0D><0A>
 
+    Serial.end();   // flushing out the remaining part of address, because i read only a portion of it
+    Serial.begin(BAUD_RATE_ATMODE);
+    
     static char result[BL_ADDRESS_LENGTH];
 
     // Responce will be in the form: +INQ:98D3:21:FC7AF7,73F4,7FFF
@@ -180,7 +194,7 @@ char* MasterCommunicationManager::findSlave() {
 #pragma mark - Connect with Slave
 
 bool MasterCommunicationManager::tryConnectingWithSlave(char slave[BL_ADDRESS_LENGTH]) {
-    
+
     char pairCommand[BL_ADDRESS_LENGTH + 11] = "AT+PAIR=";
     strcat(pairCommand, slave);
     strcat(pairCommand, ",5");
