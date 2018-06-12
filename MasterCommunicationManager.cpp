@@ -74,7 +74,7 @@ void MasterCommunicationManager::searchForNewSlave() {
     enterMode(MODE_ATCOMMAND);
     Serial.end();
     Serial.begin(BAUD_RATE_ATMODE);
-    char *slave = findFirstSlave();
+    char *slave = findSlave();
     bool connected = tryConnectingWithSlave(slave);
     
     if (connected == false) { return; }
@@ -98,7 +98,7 @@ void MasterCommunicationManager::initializeAndFindSlaveIfNeeded() {
         }
         AVRUserDefaults::setIsBluetoothAlreadyConfigured(true);
 
-        char *slave = findFirstSlave();
+        char *slave = findSlave();
         bool connected = tryConnectingWithSlave(slave);
         
         if (connected == false) { return; }
@@ -127,7 +127,7 @@ bool MasterCommunicationManager::performModuleInit() {
 
 #pragma mark - Searching For Slave
 
-char* MasterCommunicationManager::findFirstSlave() {
+char* MasterCommunicationManager::findSlave() {
     
     char responce[MAX_MESSAGE_LENGTH];
     bool initSend = false;

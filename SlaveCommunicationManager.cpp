@@ -43,7 +43,6 @@ void SlaveCommunicationManager::update() {
 bool SlaveCommunicationManager::performModuleInit() {
     Serial.begin(BAUD_RATE_ATMODE);
     enterMode(MODE_ATCOMMAND);
-    delay(BL_BOOT_TIME); // because i saw it fail on 700
     if (sendCommand("AT+ORGL",                  1).isOK == false) { return false; }
     if (sendCommand("AT+RMAAD",                 1).isOK == false) { return false; }
     if (sendCommand("AT+UART=9600,0,0",         1).isOK == false) { return false; }
@@ -55,6 +54,6 @@ bool SlaveCommunicationManager::performModuleInit() {
     if (sendCommand("AT+IAC=9E8B33",            1).isOK == false) { return false; } // liac
     
     Serial.end();
-//    AVRUserDefaults::setIsBluetoothAlreadyConfigured(true);
+    AVRUserDefaults::setIsBluetoothAlreadyConfigured(true);
     return true;
 }

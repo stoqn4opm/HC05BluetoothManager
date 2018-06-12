@@ -17,7 +17,7 @@
 class MasterCommunicationManager: BaseCommunicationManager {
 private:
     MasterCommunicationManager();
-    char *findFirstSlave();
+    char *findSlave();
     bool tryConnectingWithSlave(char slave[BL_ADDRESS_LENGTH]);
     void initializeAndFindSlaveIfNeeded();
     

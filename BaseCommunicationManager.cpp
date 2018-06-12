@@ -16,7 +16,6 @@ CommandResult BaseCommunicationManager::sendCommand(char command[], int8_t timeO
 //    delay(300); // works just fine without it but lets be on the safe side
     Serial.println(command);
     Serial.flush(); // Waits for the transmission of outgoing serial data to complete.
-//    delay(600); // > 1000 from datasheet for HC-06, tested and 107 fails, 114 passes
     
     size_t countOfBytes = 0;
     char responce[MAX_MESSAGE_LENGTH]; // OK\0
