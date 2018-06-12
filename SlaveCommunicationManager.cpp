@@ -41,7 +41,6 @@ void SlaveCommunicationManager::update() {
 #pragma mark - Module Specific Init
 
 bool SlaveCommunicationManager::performModuleInit() {
-    Serial.begin(BAUD_RATE_ATMODE);
     enterMode(MODE_ATCOMMAND);
     if (sendCommand("AT+ORGL",                  1).isOK == false) { return false; }
     if (sendCommand("AT+RMAAD",                 1).isOK == false) { return false; }
@@ -50,6 +49,7 @@ bool SlaveCommunicationManager::performModuleInit() {
     if (sendCommand("AT+PSWD=0000",             1).isOK == false) { return false; }
     if (sendCommand("AT+ROLE=0",                1).isOK == false) { return false; }
     if (sendCommand("AT+CMODE=1",               1).isOK == false) { return false; }
+    if (sendCommand("AT+SENM=3,2",              1).isOK == false) { return false; }
     if (sendCommand("AT+CLASS=73F4",            1).isOK == false) { return false; } // custom so that its harder to be discovered
     if (sendCommand("AT+IAC=9E8B33",            1).isOK == false) { return false; } // liac
     

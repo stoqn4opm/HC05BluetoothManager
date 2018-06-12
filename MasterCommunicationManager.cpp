@@ -46,6 +46,10 @@ void MasterCommunicationManager::update() {
         isInMiddleOfPattern = false;
     }
     
+    if (AVRUserDefaults::isBluetoothAlreadyConfigured() && !AVRUserDefaults::isSlaveAlreadyConfigured()) {
+        searchForNewSlave();
+    }
+    
     initializeAndFindSlaveIfNeeded();
 }
 
@@ -124,6 +128,7 @@ bool MasterCommunicationManager::performModuleInit() {
     if (sendCommand("AT+PSWD=0000",         1).isOK == false) { return false; }
     if (sendCommand("AT+ROLE=1",            1).isOK == false) { return false; }
     if (sendCommand("AT+CMODE=1",           1).isOK == false) { return false; }
+    if (sendCommand("AT+SENM=3,2",          1).isOK == false) { return false; }
     if (sendCommand("AT+CLASS=73F4",        1).isOK == false) { return false; } // custom so that its harder to be discovered
     if (sendCommand("AT+IAC=9E8B33",        1).isOK == false) { return false; } // liac
     if (sendCommand("AT+INQM=1,1,10",       1).isOK == false) { return false; } // (rssiSearch, CountOfResults, durationOfSearch)
@@ -202,20 +207,38 @@ bool MasterCommunicationManager::tryConnectingWithSlave(char slave[BL_ADDRESS_LE
     char bindCommand[BL_ADDRESS_LENGTH + 8] = "AT+BIND=";
     strcat(bindCommand, slave);
 
+    char linkCommand[BL_ADDRESS_LENGTH + 8] = "AT+LINK=";
+    strcat(linkCommand, slave);
+    
     bool cmodePassed = false;
+    bool pairPassed = false;
     int8_t numberOfAttempts = 0;
     
     do {
     
-        if (numberOfAttempts >= 20) { return false; }
+        if (numberOfAttempts >= 20) {
+            AVRUserDefaults::setIsBluetoothAlreadyConfigured(false);
+            AVRUserDefaults::setIsSlaveAlreadyConfigured(false);
+            return false;
+        }
         
         numberOfAttempts++;
-        sendCommand(pairCommand, 5);
+        
+        if (pairPassed == false) {
+            pairPassed = sendCommand(pairCommand, 5).isOK;
+            continue;
+        }
         sendCommand(bindCommand, 1);
         cmodePassed = sendCommand("AT+CMODE=0", 1).isOK;
         
     } while (cmodePassed == false);
     
-    AVRUserDefaults::setIsSlaveAlreadyConfigured(true);
-    return true;
+    if (sendCommand(linkCommand, 6).isOK) {
+        AVRUserDefaults::setIsSlaveAlreadyConfigured(true);
+        return true;
+    } else {
+        // ERROR HAPPENED, most likely because controller tries to connect with wrong pin
+        AVRUserDefaults::setIsSlaveAlreadyConfigured(false);
+        return false;
+    }
 }

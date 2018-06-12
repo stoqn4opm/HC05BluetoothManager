@@ -14,6 +14,8 @@ BaseCommunicationManager* BaseCommunicationManager::instance = 0;
 
 CommandResult BaseCommunicationManager::sendCommand(char command[], int8_t timeOutInSecs) {
 //    delay(300); // works just fine without it but lets be on the safe side
+    Serial.end();
+    Serial.begin(BAUD_RATE_ATMODE);
     Serial.println(command);
     Serial.flush(); // Waits for the transmission of outgoing serial data to complete.
     
