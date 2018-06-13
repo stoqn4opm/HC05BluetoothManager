@@ -63,36 +63,58 @@ void BaseCommunicationManager::enterMode(int8_t mode) {
 
 #pragma mark - Common Send/Receive Data
 
-int8_t BaseCommunicationManager::countOfBytesAvailable() {
-    return Serial.available();
+#define PACKET_TYPE_1 0b00000000 // used for sending 6 keypresses
+#define PACKET_TYPE_2 0b01000000 // used for sending 2 keypresses
+#define PACKET_TYPE_3 0b10000000 // used for sending battery percentage
+#define PACKET_TYPE_4 0b11000000 // for future use
+
+void BaseCommunicationManager::send(BluetoothPacket data) {
+    data.isPopulated = true;
+    if (isConnected() == false) { return; }
+    
+    uint8_t packet1 = PACKET_TYPE_1;
+    packet1 = packet1 | (data.buttonData >> 2);
+    Serial.write(packet1);
+    
+    uint8_t packet2 = PACKET_TYPE_2;
+    packet2 = packet2 | ((uint8_t)(data.buttonData << 6) >> 2);
+    Serial.write(packet2);
+    
+    uint8_t packet3 = PACKET_TYPE_3;
+    packet3 = packet3 | ((uint8_t)(data.deviceState << 2) >> 2);
+    Serial.write(packet3);
 }
 
-void BaseCommunicationManager::send(int16_t data) {
-    //    Serial.write(&data, sizeof(data));
-}
+BluetoothPacket BaseCommunicationManager::getData() {
+    
+    static BluetoothPacket result;
+    result.buttonData = 0;
+    result.deviceState = 0;
+    result.isPopulated = false;
+    
+    if (isConnected() == false)  { return result; }
 
-char *BaseCommunicationManager::getData() {
-    byte index = 0;
-    char endMarker = '\0'; // because every responce should end in \r\n\0 (CR+LF+TERM)
+    uint8_t rawData[3];
     
-    bool newData = false;
-    static char receivedChars[MAX_MESSAGE_LENGTH];
+    Serial.readBytes(rawData, sizeof(rawData));
     
-    while (Serial.available() > 0 && newData == false) {
-        char receivedCharacter = Serial.read();
-        if (receivedCharacter != endMarker) {
-            receivedChars[index] = receivedCharacter;
-            index++;
-            if (index >= MAX_MESSAGE_LENGTH) {
-                index = MAX_MESSAGE_LENGTH - 1;
-            }
+    for (uint8_t i = 0; i < 3; i++) {
+        uint8_t currentByte = rawData[i];
+        
+        if ((currentByte >> 6) == (PACKET_TYPE_1 >> 6)) {
+            result.buttonData = result.buttonData | (currentByte << 2);
         }
-        else {
-            receivedChars[index] = '\0'; // terminate the string
-            newData = true;
+        else if ((currentByte >> 6) == (PACKET_TYPE_2 >> 6)) {
+            result.buttonData = result.buttonData | ((uint8_t)(currentByte << 2) >> 6);
+        }
+        else if ((currentByte >> 6) == (PACKET_TYPE_3 >> 6)) {
+            result.deviceState = result.deviceState | ((uint8_t)(currentByte << 2) >> 2);
         }
     }
-    return receivedChars;
+    
+    result.isPopulated = true;
+    
+    return result;
 }
 
 #pragma mark - Computed Variables

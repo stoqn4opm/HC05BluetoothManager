@@ -28,8 +28,15 @@
 
 #include "Arduino.h"
 #include <AVRUserDefaults.h>
+#include "BluetoothPacket.hpp"
 
 #pragma mark - Base Abstract Class Definition
+
+struct BluetoothPacket {
+    uint8_t buttonData;
+    uint8_t deviceState;
+    bool isPopulated;
+};
 
 struct CommandResult {
     bool isOK;
@@ -47,9 +54,8 @@ class BaseCommunicationManager {
   public:
     bool isConnected();
     virtual void update() = 0;
-    void send(int16_t data);
-    char *getData();
-    int8_t countOfBytesAvailable();
+    void send(BluetoothPacket data);
+    BluetoothPacket getData();
 };
 
 #endif /* CommunicationManager_hpp */
