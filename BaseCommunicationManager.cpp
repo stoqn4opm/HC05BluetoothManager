@@ -63,16 +63,16 @@ void BaseCommunicationManager::enterMode(int8_t mode) {
 
 #pragma mark - Common Send/Receive Data
 
-#define PACKET_TYPE_1 0b00000000 // used for sending 6 keypresses
+#define PACKET_TYPE_1 0b00000000 // for future use UNSAFE, because non set uint defaults to 0
 #define PACKET_TYPE_2 0b01000000 // used for sending 2 keypresses
 #define PACKET_TYPE_3 0b10000000 // used for sending battery percentage
-#define PACKET_TYPE_4 0b11000000 // for future use
+#define PACKET_TYPE_4 0b11000000 // used for sending 6 keypresses
 
 void BaseCommunicationManager::send(BluetoothPacket data, bool sendDeviceState) {
     data.isPopulated = true;
     if (isConnected() == false) { return; }
     
-    uint8_t packet1 = PACKET_TYPE_1;
+    uint8_t packet1 = PACKET_TYPE_4;
     packet1 = packet1 | (data.buttonData >> 2);
     Serial.write(packet1);
     
@@ -103,7 +103,7 @@ BluetoothPacket BaseCommunicationManager::getData() {
     for (uint8_t i = 0; i < 3; i++) {
         uint8_t currentByte = rawData[i];
         
-        if ((currentByte >> 6) == (PACKET_TYPE_1 >> 6)) {
+        if ((currentByte >> 6) == (PACKET_TYPE_4 >> 6)) {
             result.buttonData = result.buttonData | (currentByte << 2);
         }
         else if ((currentByte >> 6) == (PACKET_TYPE_2 >> 6)) {
