@@ -54,7 +54,7 @@ class BaseCommunicationManager {
   public:
     bool isConnected();
     virtual void update() = 0;
-    void send(BluetoothPacket data);
+    void send(BluetoothPacket data, bool sendDeviceState);
     BluetoothPacket getData();
 };
 

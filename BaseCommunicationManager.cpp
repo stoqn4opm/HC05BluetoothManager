@@ -68,7 +68,7 @@ void BaseCommunicationManager::enterMode(int8_t mode) {
 #define PACKET_TYPE_3 0b10000000 // used for sending battery percentage
 #define PACKET_TYPE_4 0b11000000 // for future use
 
-void BaseCommunicationManager::send(BluetoothPacket data) {
+void BaseCommunicationManager::send(BluetoothPacket data, bool sendDeviceState) {
     data.isPopulated = true;
     if (isConnected() == false) { return; }
     
@@ -79,6 +79,8 @@ void BaseCommunicationManager::send(BluetoothPacket data) {
     uint8_t packet2 = PACKET_TYPE_2;
     packet2 = packet2 | ((uint8_t)(data.buttonData << 6) >> 2);
     Serial.write(packet2);
+    
+    if (sendDeviceState == false) { return; }
     
     uint8_t packet3 = PACKET_TYPE_3;
     packet3 = packet3 | ((uint8_t)(data.deviceState << 2) >> 2);
